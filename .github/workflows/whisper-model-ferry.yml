@@ -1,0 +1,34 @@
+name: Temporary Whisper Tiny Model Ferry
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/whisper-tiny-trigger.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  ferry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download Whisper tiny.en q5_1 model
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 5 --retry-delay 3 \
+            -o ggml-tiny.en-q5_1.bin \
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-q5_1.bin"
+          test "$(stat -c%s ggml-tiny.en-q5_1.bin)" -gt 25000000
+          sha256sum ggml-tiny.en-q5_1.bin
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisper-tiny-en-q5_1
+          path: ggml-tiny.en-q5_1.bin
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
